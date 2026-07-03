@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Studio | Lyrical AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); 
+            color: #f1f5f9; 
+            min-height: 100vh; 
+        }
+        
+        .glass-card { 
+            background: rgba(30, 41, 59, 0.4); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 16px; 
+            box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.4); 
+        }
+
+        .btn-premium { 
+            background: linear-gradient(45deg, #6366f1, #a855f7, #ec4899); 
+            background-size: 200% auto;
+            border: none; 
+            color: white; 
+            border-radius: 10px; 
+            transition: 0.5s;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .btn-premium:hover { 
+            background-position: right center;
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.4); 
+            color: white; 
+        }
+        .btn-premium:disabled {
+            background: #334155;
+            transform: none;
+            box-shadow: none;
+            color: #64748b;
+        }
+
+        .form-control { 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px solid rgba(255, 255, 255, 0.12); 
+            color: #f8fafc; 
+            border-radius: 10px;
+        }
+        .form-control:focus { 
+            background: rgba(0, 0, 0, 0.5); 
+            border-color: #a855f7; 
+            box-shadow: 0 0 0 0.25rem rgba(168, 85, 247, 0.25); 
+            color: #fff; 
+        }
+        .form-control::placeholder { color: rgba(255, 255, 255, 0.35); }
+
+        .content-display-box { 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 12px; 
+            color: #e2e8f0; 
+            padding: 20px; 
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .code-font {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .meta-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 700; margin-bottom: 4px;}
+        .meta-value { font-size: 1.05rem; color: #ffffff; font-weight: 600; }
+        .section-divider { border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 2rem 0; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark mb-5 pt-4">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span class="navbar-brand mb-0 h1 fw-bold fs-3">
+                <i class="bi bi-soundwave" style="color: #a855f7;"></i> Creator Studio <span style="font-weight: 300; opacity: 0.8;">Pro</span>
+            </span>
+            <span class="badge border border-secondary px-3 py-2 d-flex align-items-center gap-2 {% if credits_left > 0 %}bg-dark text-light{% else %}bg-danger-subtle text-danger border-danger{% endif %}" style="font-size: 0.9rem;">
+                <i class="bi bi-lightning-charge-fill {% if credits_left > 0 %}text-warning{% endif %}"></i> 
+                Daily Generations Left: <strong class="fs-6">{{ credits_left }}</strong>
+            </span>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="glass-card p-4 p-md-5">
+                    <h3 class="h5 mb-2 fw-bold text-white"><i class="bi bi-magic text-warning me-2"></i>Video Asset Engine</h3>
+                    <p class="small mb-4" style="color: #94a3b8;">Input your raw lyrics. The engine will instantly run deep track identification, meaning analysis, and produce optimized promotional assets.</p>
+                    
+                    <form method="POST" id="generatorForm">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="lyrics" class="form-label fw-semibold small text-uppercase" style="letter-spacing: 1px; color: #cbd5e1;">Song Lyrics</label>
+                            <textarea class="form-control" style="height: 380px; resize: none;" name="lyrics" id="lyrics" placeholder="Paste your raw lyrics here..." {% if credits_left <= 0 %}disabled placeholder="No credits remaining for today."{% endif %} required>{% if lyrics %}{{ lyrics }}{% endif %}</textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-premium w-100 py-3 mt-2" id="submitBtn" {% if credits_left <= 0 %}disabled{% endif %}>
+                            <span class="spinner-border spinner-border-sm d-none me-2" id="btnSpinner" role="status" aria-hidden="true"></span>
+                            <i class="bi bi-lightning-charge-fill me-1" id="btnIcon"></i> 
+                            {% if credits_left > 0 %}Auto-Generate Toolkit{% else %}Out of Credits{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                {% if error %}
+                <div class="alert alert-danger glass-card p-4 mb-4" style="background: rgba(220, 38, 38, 0.15); border-color: rgba(220, 38, 38, 0.3);" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill fs-4 text-danger me-3"></i>
+                        <div>
+                            <h4 class="alert-heading fw-bold mb-1" style="font-size: 1.1rem;">System Notification</h4>
+                            <p class="mb-0 small" style="color: #fca5a5;">{{ error }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="glass-card p-4 p-md-5">
+                    <h3 class="h5 mb-4 fw-bold text-white"><i class="bi bi-folder-check text-success me-2"></i>Generated Asset Package</h3>
+
+                    {% if processed %}
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-vinyl-fill text-primary fs-5 me-2"></i>
+                                <h4 class="h6 text-primary fw-bold mb-0 text-uppercase" style="letter-spacing: 1px;">Track Intelligence</h4>
+                            </div>
+                            
+                            <div class="content-display-box" style="border-left: 4px solid #3b82f6;">
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <div class="meta-label">Song Title</div>
+                                        <div class="meta-value">{{ ai_data.song_title }}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="meta-label">Artist</div>
+                                        <div class="meta-value">{{ ai_data.artist }}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="meta-label">Release Date</div>
+                                        <div class="meta-value">{{ ai_data.release_date }}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="meta-label">Inferred Genre / Vibe</div>
+                                        <div class="meta-value"><span class="badge bg-dark text-info border border-info-subtle">{{ ai_data.inferred_vibe }}</span></div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="meta-label">Credits</div>
+                                        <div class="meta-value" style="font-size: 0.95rem; font-weight: 400; color: #cbd5e1;">{{ ai_data.credits }}</div>
+                                    </div>
+                                    <div class="col-12 pt-2">
+                                        <div class="meta-label">Thematic Meaning</div>
+                                        <div class="p-3 mt-1 rounded bg-black bg-opacity-20 text-light border border-secondary-subtle border-opacity-10" style="font-size: 0.95rem; font-style: italic;">
+                                            "{% if ai_data.song_meaning %}{{ ai_data.song_meaning }}{% else %}No explicit analysis provided.{% endif %}"
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-divider"></div>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-youtube text-info fs-5 me-2"></i>
+                                    <h4 class="h6 text-info fw-bold mb-0 text-uppercase" style="letter-spacing: 1px;">YouTube Optimization Data</h4>
+                                </div>
+                                <button class="btn btn-sm btn-dark border border-secondary text-light px-3" onclick="copySection('seoOutput')">
+                                    <i class="bi bi-copy me-1"></i> Copy
+                                </button>
+                            </div>
+                            <div class="content-display-box code-font position-relative" id="seoOutput" style="white-space: pre-wrap;">{{ ai_data.seo_description }}</div>
+                        </div>
+
+                        <div class="section-divider"></div>
+
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-image text-warning fs-5 me-2"></i>
+                                <h4 class="h6 text-warning fw-bold mb-0 text-uppercase" style="letter-spacing: 1px;">Creative Direction Art Prompts</h4>
+                            </div>
+                            
+                            {% for prompt in ai_data.visual_prompts %}
+                            <div class="mb-3 position-relative">
+                                <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-50 px-3 py-2 rounded-top border-top border-start border-end border-secondary border-opacity-20">
+                                    <span class="small text-warning fw-semibold">Prompt Variant #{{ forloop.counter }}</span>
+                                    <button class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" onclick="copySection('prompt{{ forloop.counter }}')">
+                                        <i class="bi bi-copy me-1"></i> Copy Text
+                                    </button>
+                                </div>
+                                <div class="content-display-box code-font rounded-bottom rounded-top-0" id="prompt{{ forloop.counter }}">{{ prompt }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="section-divider"></div>
+
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-clock-history text-success fs-5 me-2"></i>
+                                    <h4 class="h6 text-success fw-bold mb-0 text-uppercase" style="letter-spacing: 1px;">Structural Timestamps</h4>
+                                </div>
+                                <button class="btn btn-sm btn-dark border border-secondary text-light px-3" onclick="copySection('timeOutput')">
+                                    <i class="bi bi-copy me-1"></i> Copy
+                                </button>
+                            </div>
+                            <div class="content-display-box code-font" id="timeOutput" style="white-space: pre-wrap;">{{ ai_data.timestamps }}</div>
+                        </div>
+
+                    {% else %}
+                        <div class="text-center my-5 py-5 text-secondary" style="opacity: 0.6;">
+                            <i class="bi bi-app-indicator display-4 mb-3 d-block text-muted"></i>
+                            <h5 class="fw-semibold text-white mb-1">Awaiting Data Entry</h5>
+                            <p class="small">The platform output panel is currently on standby. Paste lyrics on the left and submit to view organized metadata assets.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('generatorForm');
+        const btn = document.getElementById('submitBtn');
+        const spinner = document.getElementById('btnSpinner');
+        const icon = document.getElementById('btnIcon');
+
+        if(form) {
+            form.addEventListener('submit', function() {
+                btn.disabled = true;
+                spinner.classList.remove('d-none');
+                icon.classList.add('d-none');
+                btn.innerHTML = spinner.outerHTML + ' Processing Track Parameters...';
+            });
+        }
+
+        function copySection(elementId) {
+            const textToCopy = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('Content successfully copied to clipboard!');
+            }).catch(err => {
+                console.error('System failed to copy text: ', err);
+            });
+        }
+    </script>
+</body>
+</html>

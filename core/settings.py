@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-8%jkj9wl1kmrx+ug*t@@0gd!lg$@3g^4k$xruuff&)l6^&-jxr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['lyrical-ai-assistant.onrender.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
